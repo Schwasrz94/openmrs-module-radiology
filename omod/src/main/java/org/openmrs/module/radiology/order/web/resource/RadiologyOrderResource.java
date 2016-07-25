@@ -3,11 +3,12 @@
  * v. 2.0. If a copy of the MPL was not distributed with this file, You can
  * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
  * the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
- *
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
 package org.openmrs.module.radiology.order.web.resource;
+
+import java.util.List;
 
 import org.openmrs.api.context.Context;
 import org.openmrs.module.radiology.order.RadiologyOrder;
@@ -16,8 +17,6 @@ import org.openmrs.module.webservices.rest.web.RequestContext;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.annotation.PropertyGetter;
 import org.openmrs.module.webservices.rest.web.annotation.Resource;
-import org.openmrs.module.webservices.rest.web.representation.DefaultRepresentation;
-import org.openmrs.module.webservices.rest.web.representation.FullRepresentation;
 import org.openmrs.module.webservices.rest.web.representation.Representation;
 import org.openmrs.module.webservices.rest.web.resource.impl.DataDelegatingCrudResource;
 import org.openmrs.module.webservices.rest.web.resource.impl.DelegatingResourceDescription;
@@ -40,59 +39,12 @@ public class RadiologyOrderResource extends DataDelegatingCrudResource<Radiology
      */
     @Override
     public DelegatingResourceDescription getRepresentationDescription(Representation rep) {
-        if (rep instanceof DefaultRepresentation) {
-            final DelegatingResourceDescription description = new DelegatingResourceDescription();
-            description.addProperty("uuid");
-            description.addProperty("orderNumber");
-            description.addProperty("accessionNumber");
-            description.addProperty("patient", Representation.REF);
-            description.addProperty("concept", Representation.REF);
-            description.addProperty("action");
-            description.addProperty("careSetting", Representation.REF);
-            description.addProperty("previousOrder", Representation.REF);
-            description.addProperty("dateActivated");
-            description.addProperty("dateStopped");
-            description.addProperty("autoExpireDate");
-            description.addProperty("encounter", Representation.REF);
-            description.addProperty("orderer", Representation.REF);
-            description.addProperty("orderReason", Representation.REF);
-            description.addProperty("orderReasonNonCoded");
-            description.addProperty("urgency");
-            description.addProperty("scheduledDate");
-            description.addProperty("instructions");
-            description.addProperty("commentToFulfiller");
-            description.addProperty("display");
-            description.addSelfLink();
-            description.addLink("full", ".?v=" + RestConstants.REPRESENTATION_FULL);
-            return description;
-        } else if (rep instanceof FullRepresentation) {
-            final DelegatingResourceDescription description = new DelegatingResourceDescription();
-            description.addProperty("uuid");
-            description.addProperty("orderNumber");
-            description.addProperty("accessionNumber");
-            description.addProperty("patient", Representation.REF);
-            description.addProperty("concept", Representation.REF);
-            description.addProperty("action");
-            description.addProperty("careSetting", Representation.DEFAULT);
-            description.addProperty("previousOrder", Representation.REF);
-            description.addProperty("dateActivated");
-            description.addProperty("dateStopped");
-            description.addProperty("autoExpireDate");
-            description.addProperty("encounter", Representation.REF);
-            description.addProperty("orderer", Representation.REF);
-            description.addProperty("orderReason", Representation.REF);
-            description.addProperty("orderReasonNonCoded");
-            description.addProperty("urgency");
-            description.addProperty("scheduledDate");
-            description.addProperty("instructions");
-            description.addProperty("commentToFulfiller");
-            description.addProperty("display");
-            description.addProperty("auditInfo");
-            description.addSelfLink();
-            return description;
-        } else {
-            return null;
+        
+        RadiologyOrderSubclassHandler radiologyOrderSubclassHandler = getRadiologyOrderSubclassHandler();
+        if (radiologyOrderSubclassHandler != null) {
+            return radiologyOrderSubclassHandler.getRepresentationDescription(rep);
         }
+        return null;
     }
     
     /**
@@ -127,13 +79,28 @@ public class RadiologyOrderResource extends DataDelegatingCrudResource<Radiology
     @PropertyGetter("display")
     public String getDisplayString(RadiologyOrder radiologyOrder) {
         
-        if (radiologyOrder.getConcept() == null) {
-            return radiologyOrder.getAccessionNumber() + " - " + "[No Concept]";
-        } else {
-            return radiologyOrder.getAccessionNumber() + " - " + radiologyOrder.getConcept()
-                    .getName()
-                    .getName();
+        RadiologyOrderSubclassHandler radiologyOrderSubclassHandler = getRadiologyOrderSubclassHandler();
+        if (radiologyOrderSubclassHandler != null) {
+            return radiologyOrderSubclassHandler.getDisplayString(radiologyOrder);
         }
+        return "";
+    }
+    
+    /**
+     * Get the {@code RadiologyOrderSubclassHandler}
+     * 
+     * @return the radiology order subclass handler
+     */
+    private RadiologyOrderSubclassHandler getRadiologyOrderSubclassHandler() {
+        
+        List<RadiologyOrderSubclassHandler> handlers = Context.getRegisteredComponents(RadiologyOrderSubclassHandler.class);
+        for (RadiologyOrderSubclassHandler handler : handlers) {
+            if (handler.getSubclassHandled()
+                    .equals(RadiologyOrder.class)) {
+                return handler;
+            }
+        }
+        return null;
     }
     
     /**
