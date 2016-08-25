@@ -99,6 +99,11 @@ public class RadiologyConstants {
      */
     public static final String GP_MRRT_REPORT_TEMPLATE_DIR = "radiology.reportTemplatesHome";
     
+    /**
+     * user property for the dashboard tab opened after login
+     */
+    public static final String USER_PROPERTY_PREFERRED_DASHBOARD_TAB = "preferredDashboardTab";
+    
     private RadiologyConstants() {
         // Utility class not meant to be instantiated.
     }
